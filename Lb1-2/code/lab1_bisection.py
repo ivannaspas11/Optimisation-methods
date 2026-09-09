@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-# папка для збереження графіка
-os.makedirs("images", exist_ok=True)
 
 func_evals = 0
 
@@ -104,6 +102,6 @@ plt.ylabel("f(x)")
 plt.legend()
 plt.grid(True)
 
-plt.savefig("images/bisection_plot.png", dpi=300, bbox_inches='tight')
-print("\nГрафік успішно збережено у 'images/bisection_plot.png'")
+plt.savefig("../bisection_plot.png", dpi=300, bbox_inches='tight')
+print("\nГрафік успішно збережено у '../bisection_plot.png'")
 plt.show()
