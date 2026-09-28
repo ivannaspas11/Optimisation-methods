@@ -1,0 +1,101 @@
+# ЛР 4. Метод чисел Фібоначчі
+# f(x) = (x+1)^3 (x+2.5)(x-3.3) + 3.5,  x0 = 2.35,  [a0,b0] = [2.36, 2.42] (Свенн)
+import numpy as np
+
+def f(x):
+    return (x + 1)**3 * (x + 2.5) * (x - 3.3) + 3.5
+
+a, b = 2.36, 2.42
+eps = 1e-4                 # ЗАДАНА ТОЧНІСТЬ (та сама, що в ЛР 3)
+delta = eps / 10           # зсув для випадку m = 3
+L0 = b - a
+
+# ---- 1. R та пошук N ----
+R = L0 / eps
+F = [0, 1, 1]              # F[0] не використовуємо, F1 = F2 = 1
+while F[-1] < R:
+    F.append(F[-1] + F[-2])
+N = len(F) - 1             # найменше N: F_N >= R
+assert F[8] == 21          # контроль нумерації
+
+print(f"L0 = {L0:.6f}, eps = {eps}, R = L0/eps = {R:.2f}")
+print("\nТаблиця пошуку N")
+print(f"{'N':>3} {'F_N':>6} {'F_N>=R?':>8} {'L0/F_N':>10}")
+for n in range(max(1, N - 4), N + 2):
+    if n >= len(F):
+        F.append(F[-1] + F[-2])
+    print(f"{n:>3} {F[n]:>6} {'ТАК' if F[n] >= R else 'ні':>8} {L0 / F[n]:>10.6f}")
+F = F[:N + 1]
+print(f"\nN = {N}; обчислень функції N-1 = {N-1}; ітерацій N-2 = {N-2}")
+print(f"Гарантована довжина L0/F_N = {L0 / F[N]:.8f}\n")
+
+# ---- 2. Метод ----
+Nf = 0
+def fc(x):
+    global Nf
+    Nf += 1
+    return f(x)
+
+def points(a, b, m):
+    if m > 3:
+        return (a + F[m-2] / F[m] * (b - a), a + F[m-1] / F[m] * (b - a))
+    x1 = a + (b - a) / 2   # m == 3: точки злипаються
+    return x1, x1 + delta  # зсув delta
+
+rows = []
+cache = {}                 # успадковані точки: x -> f(x)
+for k in range(N - 2):
+    m = N - k
+    x1, x2 = points(a, b, m)
+    # успадкування: якщо точка вже обчислена — не рахуємо знову
+    def val(x):
+        for xc, fv in cache.items():
+            if abs(xc - x) < 1e-12:
+                return fv
+        return fc(x)
+    f1, f2 = val(x1), val(x2)
+    cache = {x1: f1, x2: f2}
+    Lk = b - a
+    if f1 <= f2:
+        dec = "f1 <= f2: b=x2"; rows.append((k, m, a, b, x1, x2, f1, f2, Lk, dec)); b = x2
+    else:
+        dec = "f1 > f2: a=x1";  rows.append((k, m, a, b, x1, x2, f1, f2, Lk, dec)); a = x1
+
+x_star = (a + b) / 2
+f_star = f(x_star)
+L_end = b - a
+
+print("Таблиця ітерацій")
+print(f"{'k':>2} {'m':>2} {'F(m-2)/F(m)':>12} {'F(m-1)/F(m)':>12} {'a_k':>9} {'b_k':>9} "
+      f"{'x1':>9} {'x2':>9} {'f(x1)':>12} {'f(x2)':>12} {'L_k':>9}  Рішення")
+for (k, m, ak, bk, x1, x2, f1, f2, Lk, dec) in rows:
+    fr1 = f"{F[m-2]}/{F[m]}"; fr2 = f"{F[m-1]}/{F[m]}"
+    note = " (m=3, x2=x1+δ)" if m == 3 else ""
+    print(f"{k:>2} {m:>2} {fr1:>12} {fr2:>12} {ak:9.6f} {bk:9.6f} {x1:9.6f} {x2:9.6f} "
+          f"{f1:12.6f} {f2:12.6f} {Lk:9.6f}  {dec}{note}")
+    assert abs((x1 + x2) - (ak + bk)) < 1e-9 or m == 3   # симетрія
+
+# ---- 3. Точний мінімум (корінь f'(x)=0 на [a0,b0]) ----
+p = np.poly1d([1, 1])**3 * np.poly1d([1, 2.5]) * np.poly1d([1, -3.3])
+roots = p.deriv().roots
+x_ex = [r.real for r in roots if abs(r.imag) < 1e-12 and 2.3 < r.real < 2.5][0]
+for _ in range(50):                       # уточнення Ньютоном
+    x_ex -= p.deriv()(x_ex) / p.deriv(2)(x_ex)
+
+print(f"\nФібоначчі: x* = {x_star:.6f}, f(x*) = {f_star:.6f}")
+print(f"Кількість ітерацій: {N-2}, обчислень функції N_f: {Nf}")
+print(f"Точний мінімум: x_точн = {x_ex:.8f}, f = {f(x_ex):.6f}")
+
+# ---- 4. Порівняння з ЛР 3 (золотий переріз, дані зі скріншота) ----
+g_Nf, g_L, g_x = 16, 0.000071, 2.383699
+print("\nПорівняння методів при eps =", eps)
+print(f"{'Метод':<16}{'N_f':>5}{'L_кін':>12}{'|x*-x_точн|':>15}")
+print(f"{'Золотий переріз':<16}{g_Nf:>5}{g_L:>12.6f}{abs(g_x - x_ex):>15.2e}")
+print(f"{'Фібоначчі':<16}{Nf:>5}{L_end:>12.6f}{abs(x_star - x_ex):>15.2e}")
+
+# ---- 5. Перевірка гарантії ----
+bound = L0 / F[N]
+tol = 1e-12                      # допуск на похибку округлення
+print(f"\nГарантія: L_кін = {L_end:.8f} <= L0/F_N = {bound:.8f}? {L_end <= bound + tol}")
+print(f"(з урахуванням зсуву δ: L_кін <= L0/F_N + δ = {bound + delta:.8f}? {L_end <= bound + delta + tol})")
+print(f"L_кін <= eps? {L_end <= eps}")
