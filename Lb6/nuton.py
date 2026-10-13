@@ -95,7 +95,7 @@ def check_derivatives(points, h=1e-5):
 
 
 # 4. част А — класичний Ньютон 
-def newton(x0, eps=EPS, max_it=MAX_IT, verbose=True, check_sign=False):
+def newton(x0, eps=EPS, max_it=MAX_IT, verbose=True, check_sign=False) : 
     c = Counter()
     rows, traj = [], [x0]
     x = x0
