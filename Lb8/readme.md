@@ -35,7 +35,7 @@ $2x_1 + 4 = 9 \Rightarrow 2x_1 = 5 \Rightarrow x_1 = 2.5$
 - **Кубічна:** $d = -\text{sign}(\nabla F)$
 - **Октаедрична:** $d = -\text{sign}(\frac{\partial F}{\partial x_j}) \cdot e_j$, де $j = \text{argmax}|\frac{\partial F}{\partial x_i}|$
 
-*(Блок-схема збережена у файлі `flowchart.png`)*.
+
 ![Блок-схема алгоритму](lab_results/flowchart.png)
 
 ## Результати та таблиці ітерацій
