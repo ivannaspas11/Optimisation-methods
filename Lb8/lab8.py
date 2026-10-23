@@ -297,7 +297,6 @@ def main():
               f"{r['Ngrad']:7d} {r['error']:16.8e} {r['grad_norm']:14.8e}")
 
     print("\nФайли збережено в папці:", OUTPUT_DIR.resolve())
-    print(" - flowchart.png: блок-схема алгоритму")
     print(" - summary.csv: зведена таблиця для всіх 6 запусків")
     print(" - iterations_*.csv: таблиці ітерацій")
     print(" - trajectories_h0_1.0.png і trajectories_h0_0.7.png: графіки")
