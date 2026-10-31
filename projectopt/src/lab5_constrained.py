@@ -17,7 +17,7 @@ def violation(I, lower=0.0, upper=1.0):
 
 
 def projected_gradient(raw, lam, L, accelerated=False, max_iter=200, tol=1e-6,
-                       criterion="map", x_ref=None):
+                       criterion="map"):
     """Метод проєкції градієнта; accelerated=True вмикає прискорення (FISTA).
 
     criterion: 'map'  — правильний, за нормою градієнтного відображення ‖G_h‖;
@@ -41,9 +41,8 @@ def projected_gradient(raw, lam, L, accelerated=False, max_iter=200, tol=1e-6,
         active = int(np.count_nonzero((I <= 1e-12) | (I >= 1.0 - 1e-12)))
         v = violation(I)
         e_k = energy(I, raw, lam); n_f += 1
-        dist = float(np.linalg.norm(I - x_ref)) if x_ref is not None else None
-        rows.append({"k": k - 1, "E": e_k, "G": g_map, "grad": g_norm, "h": h,
-                     "dist": dist, "active": active, "violation": v["max"],
+        rows.append({"k": k - 1, "E": e_k, "G": g_map, "grad": g_norm,
+                     "active": active, "violation": v["max"],
                      "n_f": n_f, "n_grad": n_grad})
 
         measure = g_map if criterion == "map" else g_norm
@@ -62,7 +61,7 @@ def projected_gradient(raw, lam, L, accelerated=False, max_iter=200, tol=1e-6,
             "converged": converged, "rows": rows}
 
 
-# ---------------------------- метод штрафів ----------------------------
+# метод штрафів
 
 def penalty_value(I, lower=0.0, upper=1.0):
     """P(I) — сума квадратів усіх порушень."""

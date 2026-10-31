@@ -161,5 +161,6 @@ def main():
     print("k :", [0, 10, 20, 30, 40])
     print("E :", [round(r["rows"][k]["E"], 2) for k in (0, 10, 20, 30, 40)])
 
+
 if __name__ == "__main__":
     main()

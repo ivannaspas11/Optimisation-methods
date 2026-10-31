@@ -93,25 +93,29 @@ def main():
     print(f"{'лаб. 2, гаусів':<34} {psnr_lab2:>9.4f} {psnr_lab2 - p0:>+8.2f}")
     print(f"{'лаб. 3, білатеральний':<34} {psnr_lab3:>9.4f} {psnr_lab3 - psnr_lab2:>+8.2f}")
 
-    # ---------- лінії рівня ----------
+       # ---------- лінії рівня ----------
     ss = np.linspace(0.3, 5.0, 40)
     sr = np.linspace(0.01, 1.0, 40)
     grid = np.array([[oracle.peek([a, b]) for a in ss] for b in sr])   # peek!
-    plt.figure(figsize=(9, 6))
-    levels = np.unique(np.quantile(grid, np.linspace(0.0, 0.6, 25)))
-    plt.contourf(ss, sr, grid, levels=levels, alpha=0.75)
-    plt.colorbar(label="f(σ_s, σ_r) = MSE")
-    nm_path = np.array([r["x"] for r in nm["rows"]])
+    fig, ax = plt.subplots(figsize=(9, 6))
+    levels = np.unique(np.quantile(grid, np.linspace(0.0, 1.0, 25)))
+    cf = ax.contourf(ss, sr, grid, levels=levels, cmap="plasma")
+    ax.contour(ss, sr, grid, levels=levels, colors="white", linewidths=0.3, alpha=0.6)
+    fig.colorbar(cf, ax=ax, label="f(σ_s, σ_r) = MSE")
+    nm_path = np.array([theta0] + [r["x"] for r in nm["rows"]])
     pw_path = np.array([theta0] + [r["x"] for r in pw["rows"]])
-    plt.plot(nm_path[:, 0], nm_path[:, 1], "o-", ms=3, lw=1, label="Нелдер—Мід")
-    plt.plot(pw_path[:, 0], pw_path[:, 1], "s-", ms=5, lw=1.5, label="Пауелл")
-    plt.scatter([nm["x"][0]], [nm["x"][1]], marker="*", s=220, zorder=5,
-                color="red", label="оптимум")
-    plt.xlabel("σ_s — просторовий масштаб")
-    plt.ylabel("σ_r — фотометричний поріг")
-    plt.title("Лабораторна 3: лінії рівня і траєкторії методів")
-    plt.legend()
-    plt.savefig("outputs/lab3_contours.png", dpi=150, bbox_inches="tight")
+    ax.plot(nm_path[:, 0], nm_path[:, 1], "o-", ms=3, lw=1.2, color="tab:cyan", label="Нелдер—Мід")
+    ax.plot(pw_path[:, 0], pw_path[:, 1], "s-", ms=5, lw=1.5, color="tab:orange", label="Пауелл")
+    ax.scatter([theta0[0]], [theta0[1]], marker="^", s=80, color="white",
+               edgecolor="black", zorder=6, label="θ₀ (старт)")
+    ax.scatter([nm["x"][0]], [nm["x"][1]], marker="*", s=220, zorder=5,
+               color="red", label="оптимум")
+    ax.set_xlabel("σ_s — просторовий масштаб")
+    ax.set_ylabel("σ_r — фотометричний поріг")
+    ax.set_title("Лабораторна 3: лінії рівня і траєкторії методів")
+    ax.legend()
+    fig.savefig("outputs/lab3_contours.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
     
     # ---------- спадання цільової функції ----------
     fig, ax = plt.subplots(figsize=(8, 5))

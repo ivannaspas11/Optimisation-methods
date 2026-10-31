@@ -121,7 +121,7 @@ def main():
     print(f"було:  MSE = {mse(noisy, clean):.8f}   PSNR = {psnr(noisy, clean):.4f} дБ")
     print(f"стало: MSE = {mse(restored, clean):.8f}   PSNR = {psnr(restored, clean):.4f} дБ")
 
-        # ---------- графік: L_k за ітераціями ----------
+    # ---------- графік: L_k за ітераціями ----------
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.semilogy(range(len(res_d["rows"])), [r["L"] for r in res_d["rows"]],
                 "o-", ms=4, lw=1.5, label=f"Дихотомія (N_f = {res_d['n_f']})")
@@ -130,7 +130,7 @@ def main():
     ax.axhline(EPS, color="gray", lw=1, ls=":", label=f"ε = {EPS:.0e}")
     ax.set_title("Лабораторна 2: скорочення довжини інтервалу L_k")
     ax.set_xlabel("k — номер ітерації")
-    ax.set_ylabel("L_k — довжина інтервалу")
+    ax.set_ylabel("L_k — довжина інтервалу (логарифмічна шкала)")
     ax.grid(alpha=0.3, which="both")
     ax.legend()
     fig.savefig("outputs/lab2_compare.png", dpi=150, bbox_inches="tight")
