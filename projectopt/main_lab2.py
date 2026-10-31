@@ -15,21 +15,38 @@ from src.lab1_svenn import svenn
 from src.lab2_search import dichotomy, golden_section, TAU
 
 
-def print_rows(rows, head=6, tail=1):
-    print(f"{'k':>3} {'a_k':>9} {'b_k':>9} {'x1':>9} {'x2':>9} "
-          f"{'f(x1)':>11} {'f(x2)':>11} {'L_k':>10}  Рішення")
-    shown = rows[:head] + ([None] if len(rows) > head + tail else []) + rows[-tail:]
-    for r in shown:
-        if r is None:
-            print("  …")
-            continue
-        print(f"{r['k']:>3} {r['a']:>9.6f} {r['b']:>9.6f} {r['x1']:>9.6f} {r['x2']:>9.6f} "
-              f"{r['f1']:>11.8f} {r['f2']:>11.8f} {r['L']:>10.3e}  {r['decision']}")
+def fmt(x):
+    """Число як у таблицях сайту: 4 знаки після коми, без зайвих нулів (0.008, 0.712)."""
+    if x == 0:
+        return "0"
+    s = f"{x:.5f}" if abs(x) < 1e-4 else f"{x:.4f}"
+    return s.rstrip("0").rstrip(".")
 
 
-def compression(L_end, L0, n_f):
-    """Стиснення на одне звернення: (L_end / L0) ** (1 / N_f)."""
-    return (L_end / L0) ** (1.0 / n_f)
+def site_decision(text):
+    """Текст рішення в тому самому записі, що й на сайті."""
+    text = text.replace("→", "->").replace("успадкували", "успадковано")
+    return " ".join(text.split())
+
+
+def print_full_table(rows, golden=False):
+    """Друкує ВСІ рядки таблиці ітерацій (у форматі сайту)."""
+    head = (f"{'k':>3} {'a_k':>8} {'b_k':>8} {'x1':>8} {'x2':>8} "
+            f"{'f(x1)':>8} {'f(x2)':>8} {'L_k':>8}")
+    if golden:
+        head += f" {'Нова точка':>10}"
+    print(head + "  Рішення")
+    for r in rows:
+        line = (f"{r['k']:>3} {fmt(r['a']):>8} {fmt(r['b']):>8} {fmt(r['x1']):>8} {fmt(r['x2']):>8} "
+                f"{fmt(r['f1']):>8} {fmt(r['f2']):>8} {fmt(r['L']):>8}")
+        if golden:
+            line += f" {fmt(r['new']):>10}"
+        print(line + "  " + site_decision(r["decision"]))
+
+
+def compression(L_start, L_end, n_f):
+    """Стиснення на одне звернення: (L_кінець / L_початок) ** (1 / N_f)."""
+    return (L_end / L_start) ** (1.0 / n_f)
 
 
 def main():
@@ -44,6 +61,7 @@ def main():
     a0, b0 = br["a"], br["b"]
     L0 = b0 - a0
     print(f"Свенн: [{a0:.4f}, {b0:.4f}]  L0 = {L0:.4f}  N_f = {br['n_f']}")
+    print(f"Початковий інтервал з лаб. 1: [a0, b0] = [{a0:.6f}, {b0:.6f}], точність ε = {EPS:.0e}")
     print(f"tau = {TAU:.10f}   tau^2 = {TAU**2:.10f}   1 - tau = {1 - TAU:.10f}")
 
     # ---------- ручний перший крок ----------
@@ -55,37 +73,47 @@ def main():
     print(f"золотий,   1-й крок: x1 = {x1g:.7f}, x2 = {x2g:.7f}, "
           f"f = {oracle.peek(x1g):.8f}, {oracle.peek(x2g):.8f}")
 
-    # ---------- основні запуски (reset між методами обов'язковий!) ----------
+    # ---------- основні запуски ----------
     oracle.reset()
     res_d = dichotomy(oracle, a0, b0, EPS)
     oracle.reset()
     res_g = golden_section(oracle, a0, b0, EPS)
 
     print("\n===== Дихотомія =====")
-    print_rows(res_d["rows"])
-    print(f"x* = {res_d['x']:.6f}  f* = {res_d['f']:.8f}  "
-          f"ітерацій = {res_d['iterations']}  N_f = {res_d['n_f']}")
+    print_full_table(res_d["rows"])
+    print(f"x* = {res_d['x']:.6f}  f* = {res_d['f']:.8f}  ітерацій = {res_d['iterations']}  N_f = {res_d['n_f']}")
 
     print("\n===== Золотий переріз =====")
-    print_rows(res_g["rows"])
-    print(f"x* = {res_g['x']:.6f}  f* = {res_g['f']:.8f}  "
-          f"ітерацій = {res_g['iterations']}  N_f = {res_g['n_f']}")
+    print_full_table(res_g["rows"], golden=True)
+    print(f"x* = {res_g['x']:.6f}  f* = {res_g['f']:.8f}  ітерацій = {res_g['iterations']}  N_f = {res_g['n_f']}")
 
+    # перевірка успадкування: x2 (нова) == x1 (стара)
     r1, r2 = res_g["rows"][0], res_g["rows"][1]
-    print(f"\nуспадкування (крок 1→2): старе x1 = {r1['x1']:.10f}, "
-          f"нове x2 = {r2['x2']:.10f}, різниця = {abs(r1['x1'] - r2['x2']):.2e}")
+    print(f"\nуспадкування (крок 1→2): старе x1 = {r1['x1']:.10f}, нове x2 = {r2['x2']:.10f}, "
+          f"різниця = {abs(r1['x1'] - r2['x2']):.2e}")
 
-    # ---------- зведена таблиця ----------
-    print("\nЗведена таблиця:")
-    print(f"{'Метод':<16} {'σ*':>9} {'f(σ*)':>12} {'L кінець':>10} {'ітер':>5} {'N_f':>4} {'стиснення':>10}")
+    # ---------- порівняння методів ----------
+    nf_d, nf_g = res_d["n_f"], res_g["n_f"]
+    saving = 100.0 * (nf_d - nf_g) / nf_d
+    print("\nσ* (золотий переріз) =", f"{res_g['x']:.6f}")
+    print(f"N_f дихотомії = {nf_d}     N_f золотого перерізу = {nf_g}  ({nf_g - nf_d:+d} звернень)     Економія = {saving:.1f}%")
+
+    print("\nПорівняння методів:")
+    print(f"{'Метод':<16} {'x*':>8} {'f(x*)':>8} {'Довжина [a,b]':>14} {'Ітерацій':>9} {'N_f':>5} "
+          f"{'Стиснення (від L1)':>19} {'Стиснення (від L0)':>19}")
     for name, r in (("Дихотомія", res_d), ("Золотий переріз", res_g)):
         L_end = r["b"] - r["a"]
-        print(f"{name:<16} {r['x']:>9.6f} {r['f']:>12.8f} {L_end:>10.3e} {r['iterations']:>5} "
-              f"{r['n_f']:>4} {compression(L_end, L0, r['n_f']):>10.4f}")
-    print(f"\nтеорія: дихотомія ≈ {math.log2(L0 / EPS):.1f},  "
-          f"золотий ≈ {math.log(EPS / L0) / math.log(TAU):.1f} ітерацій")
+        L1 = r["rows"][0]["L"]
+        print(f"{name:<16} {fmt(r['x']):>8} {fmt(r['f']):>8} {fmt(L_end):>14} {r['iterations']:>9} {r['n_f']:>5} "
+              f"{compression(L1, L_end, r['n_f']):>19.4f} {compression(L0, L_end, r['n_f']):>19.4f}")
+    print(f"\nтеорія: дихотомія ≈ {math.log2(L0 / EPS):.1f},  золотий ≈ {math.log(EPS / L0) / math.log(TAU):.1f} ітерацій")
 
-    # ---------- відновлення зображення ----------
+    print(f"\nВисновок лаб. 2. Золотий переріз досяг тієї самої точності за {nf_g} звернень проти {nf_d} "
+          f"у дихотомії (економія {saving:.1f}%), хоча виконав більше ітерацій "
+          f"({res_g['iterations']} проти {res_d['iterations']}). Мірою вартості методу є "
+          f"оракульна складність, а не кількість ітерацій.")
+
+    # ---------- зображення ----------
     sigma_star = res_g["x"]
     restored = gaussian_blur(noisy, sigma_star)
     save_png(restored, "outputs/lab2_restored.png")
@@ -93,29 +121,30 @@ def main():
     print(f"було:  MSE = {mse(noisy, clean):.8f}   PSNR = {psnr(noisy, clean):.4f} дБ")
     print(f"стало: MSE = {mse(restored, clean):.8f}   PSNR = {psnr(restored, clean):.4f} дБ")
 
-    # ---------- графік збіжності ----------
-    plt.figure(figsize=(8, 5))
-    nd = [2 * r["k"] for r in res_d["rows"]]
-    ng = [r["n_f"] for r in res_g["rows"]]
-    plt.semilogy([0] + nd, [L0] + [r["L"] for r in res_d["rows"]], "o-", label="дихотомія")
-    plt.semilogy([2] + ng, [L0] + [r["L"] for r in res_g["rows"]], "s-", label="золотий переріз")
-    plt.axhline(EPS, color="gray", linestyle="--", label="ε")
-    plt.xlabel("кількість звернень до оракула N_f")
-    plt.ylabel("довжина відрізка L")
-    plt.title("Лабораторна 2: стиснення відрізка за звернення")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.savefig("outputs/lab2_compare.png", dpi=150, bbox_inches="tight")
+        # ---------- графік: L_k за ітераціями ----------
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.semilogy(range(len(res_d["rows"])), [r["L"] for r in res_d["rows"]],
+                "o-", ms=4, lw=1.5, label=f"Дихотомія (N_f = {res_d['n_f']})")
+    ax.semilogy(range(len(res_g["rows"])), [r["L"] for r in res_g["rows"]],
+                "s--", ms=4, lw=1.5, label=f"Золотий переріз (N_f = {res_g['n_f']})")
+    ax.axhline(EPS, color="gray", lw=1, ls=":", label=f"ε = {EPS:.0e}")
+    ax.set_title("Лабораторна 2: скорочення довжини інтервалу L_k")
+    ax.set_xlabel("k — номер ітерації")
+    ax.set_ylabel("L_k — довжина інтервалу")
+    ax.grid(alpha=0.3, which="both")
+    ax.legend()
+    fig.savefig("outputs/lab2_compare.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
-    # ---------- дослід 1: ε / 10 ----------
+    # ---------- дослід 1: eps / 10 ----------
     print("\n===== Дослід 1: ε / 10 =====")
     eps2 = EPS / 10
     oracle.reset(); d2 = dichotomy(oracle, a0, b0, eps2)
     oracle.reset(); g2 = golden_section(oracle, a0, b0, eps2)
-    print(f"дихотомія: ітер {res_d['iterations']} → {d2['iterations']} "
-          f"(+{d2['iterations'] - res_d['iterations']}), N_f {res_d['n_f']} → {d2['n_f']}")
-    print(f"золотий:   ітер {res_g['iterations']} → {g2['iterations']} "
-          f"(+{g2['iterations'] - res_g['iterations']}), N_f {res_g['n_f']} → {g2['n_f']}")
+    print(f"дихотомія: ітер {res_d['iterations']} → {d2['iterations']} (+{d2['iterations'] - res_d['iterations']}), "
+          f"N_f {res_d['n_f']} → {d2['n_f']}")
+    print(f"золотий:   ітер {res_g['iterations']} → {g2['iterations']} (+{g2['iterations'] - res_g['iterations']}), "
+          f"N_f {res_g['n_f']} → {g2['n_f']}")
     print(f"теорія: +{math.log2(10):.1f} (дихотомія), +{math.log(10) / math.log(1 / TAU):.1f} (золотий)")
 
     # ---------- дослід 2: delta = eps ----------

@@ -161,24 +161,5 @@ def main():
     print("k :", [0, 10, 20, 30, 40])
     print("E :", [round(r["rows"][k]["E"], 2) for k in (0, 10, 20, 30, 40)])
 
-    # --- 3: вплив λ
-    print("\n===== Дослід 3: PSNR від λ =====")
-    for l in (0.05, 0.24, lam, 1.0, 5.0):
-        p = psnr(np.clip(tikhonov_exact(noisy, l), 0.0, 1.0), clean)
-        mark = "  ← λ*" if l == lam else ""
-        print(f"λ = {l:.6f}   PSNR = {p:.4f} дБ{mark}")
-    grid = np.logspace(-2, 1.0, 60)
-    ps = [psnr(np.clip(tikhonov_exact(noisy, l), 0.0, 1.0), clean) for l in grid]
-    plt.figure(figsize=(8, 5))
-    plt.semilogx(grid, ps)
-    plt.axvline(lam, color="red", linestyle="--", label=f"λ* = {lam:.3f}")
-    plt.xlabel("λ")
-    plt.ylabel("PSNR, дБ")
-    plt.title("Лабораторна 4: вплив λ на якість")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.savefig("outputs/lab4_psnr_vs_lambda.png", dpi=150, bbox_inches="tight")
-
-
 if __name__ == "__main__":
     main()

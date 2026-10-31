@@ -112,6 +112,22 @@ def main():
     plt.title("Лабораторна 3: лінії рівня і траєкторії методів")
     plt.legend()
     plt.savefig("outputs/lab3_contours.png", dpi=150, bbox_inches="tight")
+    
+    # ---------- спадання цільової функції ----------
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.semilogy(range(len(nm["rows"])), [r["f"] for r in nm["rows"]],
+                "o-", ms=3, lw=1.5, markevery=5, color="tab:blue", label="Нелдер—Мід")
+    ax.semilogy(range(len(pw["rows"])), [r["f"] for r in pw["rows"]],
+                "s--", ms=5, lw=1.5, color="tab:orange", label="Пауелл")
+    ax.axhline(nm["f"], color="gray", lw=1, ls=":", label=f"f* = {nm['f']:.6f}")
+    ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+    ax.set_xlabel("k — номер ітерації (цикл для Пауелла)")
+    ax.set_ylabel("f(θ_k) — MSE (логарифмічна шкала)")
+    ax.set_title("Лабораторна 3: збіжність методів")
+    ax.grid(alpha=0.3, which="both")
+    ax.legend()
+    fig.savefig("outputs/lab3_convergence.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
     # ================= ДОСЛІДИ =================
     # --- 1: розмір початкового трикутника

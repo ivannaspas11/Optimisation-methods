@@ -24,26 +24,31 @@ def main():
     # ================= 5.1. сире спостереження =================
     out = int(np.sum((raw < 0) | (raw > 1)))
     print("сире спостереження:")
-    print(f"   поза [0, 1]:  {out} пікселів із {raw.size} ({100 * out / raw.size:.2f} %)")
-    print(f"   найменше значення: {raw.min():.4f}      найбільше: {raw.max():.4f}")
+    print(f"  поза [0, 1]:  {out} пікселів із {raw.size} ({100 * out / raw.size:.2f} %)")
+    print(f"  найменше значення: {raw.min():.4f}      найбільше: {raw.max():.4f}")
 
     unconstrained = tikhonov_exact(raw, lam)            # безумовний розв'язок на raw
     v_u = violation(unconstrained)
     print("\nбезумовний розв'язок:")
-    print(f"   поза Ω:  {v_u['count']} пікселів ({100 * v_u['count'] / raw.size:.2f} %)")
-    print(f"   максимальне порушення: {v_u['max']:.6f}")
-    print(f"   E = {energy(unconstrained, raw, lam):.8f}")
+    print(f"  поза Ω:  {v_u['count']} пікселів ({100 * v_u['count'] / raw.size:.2f} %)")
+    print(f"  максимальне порушення: {v_u['max']:.6f}")
+    print(f"  E = {energy(unconstrained, raw, lam):.8f}")
 
-    plt.figure(figsize=(9, 4))
-    plt.hist(raw.ravel(), bins=120, alpha=0.55, label="сире спостереження")
-    plt.hist(unconstrained.ravel(), bins=120, alpha=0.55, label="безумовний розв'язок")
-    plt.axvline(0.0, color="red", ls="--", label="межі допустимої області")
-    plt.axvline(1.0, color="red", ls="--")
-    plt.xlabel("яскравість пікселя")
-    plt.ylabel("кількість пікселів")
-    plt.legend()
-    plt.savefig("outputs/lab5_histogram.png", dpi=150, bbox_inches="tight")
-    plt.close()
+    edges = np.linspace(raw.min(), raw.max(), 121)       # однакові стовпчики для обох
+    fig, ax = plt.subplots(figsize=(9, 4))
+    ax.hist(raw.ravel(), bins=120, color="tab:green", alpha=0.45,
+            label=f"сире спостереження (поза [0, 1]: {out})")
+    ax.hist(unconstrained.ravel(), bins=120, histtype="step", lw=1.6,
+            color="tab:purple",
+            label=f"безумовний розв'язок (поза [0, 1]: {v_u['count']})")
+    ax.axvline(0.0, color="black", ls=":", lw=1.2, label="межі допустимої області")
+    ax.axvline(1.0, color="black", ls=":", lw=1.2)
+    ax.set_xlabel("яскравість пікселя")
+    ax.set_ylabel("кількість пікселів")
+    ax.set_title("Лабораторна 5: розподіл яскравостей")
+    ax.legend()
+    fig.savefig("outputs/lab5_histogram.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
     # ================= 5.3–5.5. проєкція градієнта =================
     res_pg = projected_gradient(raw, lam, L)
@@ -85,18 +90,19 @@ def main():
     print(f"штраф дорожчий у {(res_pen['n_f'] + res_pen['n_grad']) / (res_pg['n_f'] + res_pg['n_grad']):.1f} раза")
 
     # графік і зображення
-    E_star = res_pg["E"]
-    plt.figure(figsize=(9, 5))
-    for name, res in (("Проєкція градієнта", res_pg), ("FISTA", res_fi)):
-        ys = [max(r["E"] - E_star, 1e-16) for r in res["rows"]]
-        plt.semilogy(range(len(ys)), ys, label=name)
-    plt.xlabel("номер ітерації")
-    plt.ylabel("E(I_k) − E*")
-    plt.title("Лабораторна 5: збіжність проєкційних методів")
-    plt.legend()
-    plt.grid(alpha=0.3)
-    plt.savefig("outputs/lab5_convergence.png", dpi=150, bbox_inches="tight")
-    plt.close()
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.semilogy(range(len(res_pg["rows"])), [r["E"] for r in res_pg["rows"]],
+                "o-", ms=3, lw=1.3, markevery=5, label="Проєкція градієнта")
+    ax.semilogy(range(len(res_fi["rows"])), [r["E"] for r in res_fi["rows"]],
+                "s--", ms=3, lw=1.3, markevery=5, label="FISTA")
+    ax.axhline(res_pg["E"], color="gray", ls=":", lw=1, label=f"E* = {res_pg['E']:.4f}")
+    ax.set_xlabel("k — номер ітерації")
+    ax.set_ylabel("E(I_k) (логарифмічна шкала)")
+    ax.set_title("Лабораторна 5: збіжність проєкційних методів")
+    ax.grid(alpha=0.3, which="both")
+    ax.legend()
+    fig.savefig("outputs/lab5_convergence.png", dpi=150, bbox_inches="tight")
+    plt.close(fig)
 
     save_png(res_pg["I"], "outputs/lab5_restored.png")
     p5 = psnr(res_pg["I"], clean)
